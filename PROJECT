@@ -1,0 +1,7 @@
+domain: vadasambar.github.io
+repo: devenv-controller
+resources:
+- group: dev
+  kind: Environment
+  version: v1alpha1
+version: "2"

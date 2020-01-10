@@ -1,0 +1,25 @@
+apiVersion: dev.vadasambar.github.io/v1alpha1
+kind: Environment
+metadata:
+  name: environment-foo
+spec:
+  # Add fields here
+  source:
+    name: "myapp"
+    namespace: "default"
+    path: "guestbook"
+    repoURL: "https://github.com/argoproj/argocd-example-apps.git"
+    revision: "HEAD"
+  dependencies:
+    - name: "nginx-ingress"
+      namespace: "default"
+      chartName: "nginx-ingress"
+      repoURL: "https://kubernetes-charts.storage.googleapis.com/"
+      revision: "1.27.0"
+    - name: "prometheus"
+      namespace: "default"
+      chartName: "prometheus"
+      repoURL: "https://kubernetes-charts.storage.googleapis.com/"
+      revision: "9.7.2"
+  clusterClassRef: app-kubernetes-class
+  clusterName: b16-cluster
