@@ -3,7 +3,6 @@ kind: Environment
 metadata:
   name: environment-foo
 spec:
-  # Add fields here
   source:
     name: "myapp"
     namespace: "default"
@@ -16,10 +15,5 @@ spec:
       chartName: "nginx-ingress"
       repoURL: "https://kubernetes-charts.storage.googleapis.com/"
       revision: "1.27.0"
-    - name: "prometheus"
-      namespace: "default"
-      chartName: "prometheus"
-      repoURL: "https://kubernetes-charts.storage.googleapis.com/"
-      revision: "9.7.2"
-  clusterClassRef: app-kubernetes-class
-  clusterName: b16-cluster
+  clusterClassLabel: app-kubernetes-class
+  clusterName: example-cluster

@@ -1,0 +1,8 @@
+replicaCount: 2
+image:
+    # repository: vadasambar/dev-env
+    repository: dev-env
+    pullPolicy: IfNotPresent
+
+crossplaneNamespace: crossplane-system
+argocdNamespace: argocd

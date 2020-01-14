@@ -34,7 +34,7 @@ spec:
         spec:
           description: EnvironmentSpec defines the desired state of Environment
           properties:
-            clusterClassRef:
+            clusterClassLabel:
               type: string
             clusterName:
               type: string

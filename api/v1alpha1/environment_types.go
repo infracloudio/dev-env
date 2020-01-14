@@ -33,8 +33,8 @@ type EnvironmentSpec struct {
 
 	Dependencies []DependencySrc `json:"dependencies,omitempty"`
 
-	ClusterClassRef string `json:"clusterClassRef,omitempty"`
-	ClusterName     string `json:"clusterName,omitempty"`
+	ClusterClassLabel string `json:"clusterClassLabel,omitempty"`
+	ClusterName       string `json:"clusterName,omitempty"`
 }
 
 // AppSrc defines fields related to the source repository/location of the application

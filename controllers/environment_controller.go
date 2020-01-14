@@ -78,7 +78,7 @@ func (r *EnvironmentReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error)
 	k8class, fetchClassErr := r.fetchClusterClass(env)
 	if fetchClassErr != nil {
 		r.Log.Error(fetchClassErr, "could not get cluster class referenced in the environment", "cluster-class",
-			env.Spec.ClusterClassRef,
+			env.Spec.ClusterClassLabel,
 			"namespace", r.CrossplaneNamespace)
 		return ctrl.Result{Requeue: true}, fetchClassErr
 	}
@@ -166,7 +166,7 @@ func (r *EnvironmentReconciler) SetupWithManager(mgr ctrl.Manager) error {
 func (r *EnvironmentReconciler) fetchClusterClass(env *devv1alpha1.Environment) (*crossplanegcpv1beta1.GKEClusterClass, error) {
 	k8class := &crossplanegcpv1beta1.GKEClusterClass{}
 	k8classNamespacedName := types.NamespacedName{
-		Name: env.Spec.ClusterClassRef,
+		Name: env.Spec.ClusterClassLabel,
 	}
 	err := r.Client.Get(context.Background(), k8classNamespacedName, k8class)
 	if err != nil {
@@ -272,7 +272,7 @@ func (r *EnvironmentReconciler) createClusterClaim(env *devv1alpha1.Environment)
 			ResourceClaimSpec: crossplaneruntime.ResourceClaimSpec{
 				ClassSelector: &metav1.LabelSelector{
 					MatchLabels: map[string]string{
-						ClassNameLabel: env.Spec.ClusterClassRef,
+						ClassNameLabel: env.Spec.ClusterClassLabel,
 					},
 				},
 				WriteConnectionSecretToReference: &crossplaneruntime.LocalSecretReference{

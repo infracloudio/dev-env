@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "dev-env.fullname" . }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      devenv.vadasambar.github.io/name: {{ include "dev-env.fullname" . }}
+  template:
+    metadata:
+      labels:
+        devenv.vadasambar.github.io/name: {{ include "dev-env.fullname" . }}
+    spec:
+      serviceAccountName: dev-env-sa
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+          - name: CROSSPLANE-NAMESPACE
+            value: "{{ .Values.crossplaneNamespace }}"
+          - name: ARGOCD-NAMESPACE
+            value: "{{ .Values.argocdNamespace }}"
