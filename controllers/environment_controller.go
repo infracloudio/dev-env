@@ -19,6 +19,7 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/go-logr/logr"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -145,7 +146,73 @@ func (r *EnvironmentReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error)
 		r.Log.Info("created nodepool")
 	}
 
-	return ctrl.Result{}, nil
+	return r.updateStatus(env)
+}
+
+func (r *EnvironmentReconciler) updateStatus(env *devv1alpha1.Environment) (ctrl.Result, error) {
+
+	argocdDependenciesReady := true
+	for _, dependency := range env.Spec.Dependencies {
+		if argocdDependenciesReady == false {
+			break
+		}
+
+		if r.isArgoCDAppReady(dependency.Name) {
+			argocdDependenciesReady = argocdDependenciesReady && true
+		}
+	}
+
+	if r.isClusterBound(env) && r.isArgoCDAppReady(env.Spec.Source.Name) && argocdDependenciesReady {
+		env.Status.Ready = true
+		if err := r.Status().Update(context.Background(), env); err != nil {
+			r.Log.Error(err, "could not update `Status` of env", "object", env)
+			return ctrl.Result{RequeueAfter: time.Second * 10}, err
+		}
+		return ctrl.Result{RequeueAfter: time.Second * 10}, nil
+	}
+
+	env.Status.Ready = false
+	if err := r.Status().Update(context.Background(), env); err != nil {
+		r.Log.Error(err, "could not update `Status` of env", "object", env)
+	}
+
+	return ctrl.Result{RequeueAfter: time.Second * 10}, nil
+}
+
+func (r *EnvironmentReconciler) isClusterBound(env *devv1alpha1.Environment) bool {
+	kubernetesCluster := &computev1alpha1.KubernetesCluster{}
+	var err error
+	if err = r.Client.Get(context.Background(), types.NamespacedName{Namespace: r.CrossplaneNamespace, Name: env.Spec.ClusterName}, kubernetesCluster); err == nil {
+		r.Log.Info("cluster is being provisioned")
+		if kubernetesCluster.Status.BindingStatus.Phase == crossplaneruntime.BindingPhaseBound {
+			r.Log.Info("cluster has been provisioned")
+			return true
+		}
+		return false
+	}
+
+	r.Log.Error(err, "could not get kubernetesCluster", "NamespacedName", types.NamespacedName{Namespace: r.CrossplaneNamespace, Name: env.Spec.ClusterName}, "dependency", kubernetesCluster)
+	return false
+}
+
+func (r *EnvironmentReconciler) isArgoCDAppReady(name string) bool {
+	argocdApp := &argocdapplicationv1alpha1.Application{}
+	var err error
+	if err = r.Client.Get(context.Background(), types.NamespacedName{Name: name, Namespace: r.ArgoCDNamespace}, argocdApp); err == nil {
+		r.Log.Info("checking if argocd app is ready")
+
+		if argocdApp.Status.Health.Status == argocdapplicationv1alpha1.HealthStatusHealthy &&
+			argocdApp.Status.Sync.Status == argocdapplicationv1alpha1.SyncStatusCodeSynced {
+			r.Log.Info("argocd app is ready")
+			return true
+		}
+
+		r.Log.Info("argocd app is not ready yet")
+		return false
+	}
+
+	r.Log.Error(err, "could not get argocdApp", "NamespacedName", types.NamespacedName{Name: name, Namespace: r.ArgoCDNamespace}, "dependency", argocdApp)
+	return false
 }
 
 func (r *EnvironmentReconciler) fetchApp(name string) error {

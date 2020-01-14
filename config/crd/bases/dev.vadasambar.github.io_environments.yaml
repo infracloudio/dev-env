@@ -8,6 +8,10 @@ metadata:
   creationTimestamp: null
   name: environments.dev.vadasambar.github.io
 spec:
+  additionalPrinterColumns:
+  - JSONPath: .status.ready
+    name: Ready
+    type: boolean
   group: dev.vadasambar.github.io
   names:
     kind: Environment
@@ -15,6 +19,8 @@ spec:
     plural: environments
     singular: environment
   scope: Cluster
+  subresources:
+    status: {}
   validation:
     openAPIV3Schema:
       description: Environment is the Schema for the environments API
@@ -535,6 +541,8 @@ spec:
           required:
           - ready
           type: object
+      required:
+      - spec
       type: object
   version: v1alpha1
   versions:

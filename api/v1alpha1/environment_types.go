@@ -98,12 +98,14 @@ type EnvironmentStatus struct {
 
 // +kubebuilder:object:root=true
 // +kubebuilder:resource:scope=Cluster
+// +kubebuilder:subresource:status
+// +kubebuilder:printcolumn:name="Ready",type=boolean,JSONPath=`.status.ready`
 // Environment is the Schema for the environments API
 type Environment struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   EnvironmentSpec   `json:"spec,omitempty"`
+	Spec   EnvironmentSpec   `json:"spec"`
 	Status EnvironmentStatus `json:"status,omitempty"`
 }
 
