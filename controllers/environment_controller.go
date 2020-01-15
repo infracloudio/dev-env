@@ -183,11 +183,12 @@ func (r *EnvironmentReconciler) isClusterBound(env *devv1alpha1.Environment) boo
 	kubernetesCluster := &computev1alpha1.KubernetesCluster{}
 	var err error
 	if err = r.Client.Get(context.Background(), types.NamespacedName{Namespace: r.CrossplaneNamespace, Name: env.Spec.ClusterName}, kubernetesCluster); err == nil {
-		r.Log.Info("cluster is being provisioned")
 		if kubernetesCluster.Status.BindingStatus.Phase == crossplaneruntime.BindingPhaseBound {
 			r.Log.Info("cluster has been provisioned")
 			return true
 		}
+
+		r.Log.Info("cluster is not ready yet")
 		return false
 	}
 
@@ -199,7 +200,6 @@ func (r *EnvironmentReconciler) isArgoCDAppReady(name string) bool {
 	argocdApp := &argocdapplicationv1alpha1.Application{}
 	var err error
 	if err = r.Client.Get(context.Background(), types.NamespacedName{Name: name, Namespace: r.ArgoCDNamespace}, argocdApp); err == nil {
-		r.Log.Info("checking if argocd app is ready")
 
 		if argocdApp.Status.Health.Status == argocdapplicationv1alpha1.HealthStatusHealthy &&
 			argocdApp.Status.Sync.Status == argocdapplicationv1alpha1.SyncStatusCodeSynced {
@@ -209,6 +209,7 @@ func (r *EnvironmentReconciler) isArgoCDAppReady(name string) bool {
 
 		r.Log.Info("argocd app is not ready yet")
 		return false
+
 	}
 
 	r.Log.Error(err, "could not get argocdApp", "NamespacedName", types.NamespacedName{Name: name, Namespace: r.ArgoCDNamespace}, "dependency", argocdApp)
