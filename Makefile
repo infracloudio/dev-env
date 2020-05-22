@@ -33,6 +33,16 @@ install: manifests
 uninstall: manifests
 	kustomize build config/crd | kubectl delete -f -
 
+deploy-base: 
+	helm repo add crossplane-alpha https://charts.crossplane.io/alpha
+	helm repo update
+	kubectl create ns crossplane-system
+	helm install crossplane --namespace crossplane-system crossplane-alpha/crossplane --version 0.9.0 \
+	--set clusterStacks.gcp.deploy=true --set clusterStacks.gcp.version=v0.7.0
+	kubectl create ns argocd
+	kubectl apply -f custom-argo-install.yaml -nargocd
+
+
 # Deploy controller in the configured Kubernetes cluster in ~/.kube/config
 deploy: manifests
 	cd config/manager && kustomize edit set image controller=${IMG}

@@ -28,8 +28,8 @@ import (
 	// NOTE: argocdapplicationapis import should be replaced with import from the original repo
 	// The PR for allowing destination name instead of IP was not yet merged at the time of writing this
 	// PR: https://github.com/argoproj/argo-cd/pull/2808
-	crossplaneapis "github.com/crossplaneio/crossplane/apis"
-	stackgcpapis "github.com/crossplaneio/stack-gcp/apis"
+	crossplaneapis "github.com/crossplane/crossplane/apis"
+	providergcpapis "github.com/crossplane/provider-gcp/apis"
 	argocdapplicationapis "github.com/kanuahs/argo-cd/pkg/apis/application/v1alpha1"
 	"k8s.io/apimachinery/pkg/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -48,7 +48,7 @@ func init() {
 	_ = clientgoscheme.AddToScheme(scheme)
 	_ = crossplaneapis.AddToScheme(scheme)
 	_ = devv1alpha1.AddToScheme(scheme)
-	_ = stackgcpapis.AddToScheme(scheme)
+	_ = providergcpapis.AddToScheme(scheme)
 	_ = argocdapplicationapis.AddToScheme(scheme)
 	// +kubebuilder:scaffold:scheme
 }

@@ -41,10 +41,16 @@ spec:
           description: EnvironmentSpec defines the desired state of Environment
           properties:
             clusterClassLabel:
+              description: ClusterClassLabel is used to select the crossplane cluster
+                class for provisioning the cluster
               type: string
             clusterName:
+              description: ClusterName is the name of the cluster to provision in
+                the cloud provider
               type: string
             dependencies:
+              description: Dependencies are the dependencies required for the main
+                application
               items:
                 description: DependencySrc defines fields related to the source repository/location
                   of the application DependencySrc overlaps with AppSrc but they're
@@ -71,11 +77,7 @@ spec:
                 type: object
               type: array
             source:
-              description: AppSrc defines fields related to the source repository/location
-                of the application AppSrc overlaps with DependencySrc but they're
-                kept as two different structs to accomodate validation (e.g., path
-                is required in app but not in dependencies) AppSrc and DependencySrc
-                might get merged in the future
+              description: Source are parameters to define the main application
               properties:
                 chartName:
                   minLength: 1
@@ -100,6 +102,12 @@ spec:
               - repoURL
               - revision
               type: object
+            ttl:
+              description: TTL (Time to Live) is the time duration for which the cluster
+                should live. Once the TTL is exceeded, the cluster is automatically
+                deleted. Optional parameter with no default value.
+              pattern: ^(([0-9]+)m|([0-9]+)h|([0-9]+)d|([0-9]+)y)$
+              type: string
           required:
           - source
           type: object
@@ -538,8 +546,9 @@ spec:
               type: object
             ready:
               type: boolean
-          required:
-          - ready
+            ttlStartTimestamp:
+              format: date-time
+              type: string
           type: object
       required:
       - spec

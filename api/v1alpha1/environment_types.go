@@ -29,12 +29,23 @@ type EnvironmentSpec struct {
 	// Important: Run "make" to regenerate code after modifying this file
 
 	// +kubebuilder:validation:Required
+	// Source are parameters to define the main application
 	Source AppSrc `json:"source"`
 
+	// Dependencies are the dependencies required for the main application
 	Dependencies []DependencySrc `json:"dependencies,omitempty"`
 
+	// ClusterClassLabel is used to select the crossplane cluster class for provisioning the cluster
 	ClusterClassLabel string `json:"clusterClassLabel,omitempty"`
-	ClusterName       string `json:"clusterName,omitempty"`
+
+	// ClusterName is the name of the cluster to provision in the cloud provider
+	ClusterName string `json:"clusterName,omitempty"`
+
+	// TTL (Time to Live) is the time duration for which the cluster should live.
+	// Once the TTL is exceeded, the cluster is automatically deleted.
+	// Optional parameter with no default value.
+	// +kubebuilder:validation:Pattern=^(([0-9]+)m|([0-9]+)h|([0-9]+)d|([0-9]+)y)$
+	TTL string `json:"ttl,omitempty"`
 }
 
 // AppSrc defines fields related to the source repository/location of the application
@@ -93,7 +104,8 @@ type EnvironmentStatus struct {
 	ApplicationStatus metav1.Status `json:"applicationStatus,omitempty"`
 	DependencyStatus  metav1.Status `json:"dependencyStatus,omitempty"`
 
-	Ready bool `json:"ready"`
+	Ready             bool         `json:"ready,omitempty"`
+	TTLStartTimestamp *metav1.Time `json:"ttlStartTimestamp,omitempty"`
 }
 
 // +kubebuilder:object:root=true

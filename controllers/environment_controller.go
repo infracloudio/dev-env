@@ -19,6 +19,7 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -31,12 +32,12 @@ import (
 
 	devv1alpha1 "devenv-controller/api/v1alpha1"
 
-	crossplanemetav1 "github.com/crossplaneio/crossplane-runtime/pkg/meta"
+	crossplanemetav1 "github.com/crossplane/crossplane-runtime/pkg/meta"
 
-	crossplaneruntime "github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
-	computev1alpha1 "github.com/crossplaneio/crossplane/apis/compute/v1alpha1"
-	crossplanegcpv1alpha1 "github.com/crossplaneio/stack-gcp/apis/container/v1alpha1"
-	crossplanegcpv1beta1 "github.com/crossplaneio/stack-gcp/apis/container/v1beta1"
+	crossplaneruntime "github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
+	computev1alpha1 "github.com/crossplane/crossplane/apis/compute/v1alpha1"
+	crossplanegcpv1alpha1 "github.com/crossplane/provider-gcp/apis/container/v1alpha1"
+	crossplanegcpv1beta1 "github.com/crossplane/provider-gcp/apis/container/v1beta1"
 	argocdapplicationv1alpha1 "github.com/kanuahs/argo-cd/pkg/apis/application/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
@@ -75,6 +76,46 @@ func (r *EnvironmentReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error)
 		return ctrl.Result{Requeue: true}, err
 	}
 	r.Log.Info("environment object", "env", env)
+
+	if env.Spec.TTL != "" && r.areArgoCDAppDependenciesReady(env) && r.isClusterBound(env) && r.isArgoCDAppReady(env.Spec.Source.Name) {
+		if env.Status.TTLStartTimestamp.IsZero() {
+			now := metav1.Now()
+			env.Status.TTLStartTimestamp = &now
+			ttlTimeStampUpdationErr := r.Status().Update(context.Background(), env)
+			if ttlTimeStampUpdationErr != nil {
+				r.Log.Error(ttlTimeStampUpdationErr, "could not update ttlStartTimestamp", "env", env)
+				return ctrl.Result{Requeue: true}, ttlTimeStampUpdationErr
+			}
+		} else {
+			var ttl time.Duration
+			ttlDurationStr := env.Spec.TTL[:len(env.Spec.TTL)-1]
+			ttlDuration, _ := strconv.Atoi(ttlDurationStr)
+			ttlUnit := env.Spec.TTL[len(env.Spec.TTL)-1 : len(env.Spec.TTL)]
+			switch ttlUnit {
+			case "m":
+				ttl = time.Duration(ttlDuration) * time.Minute
+			case "h":
+				ttl = time.Duration(ttlDuration) * time.Hour
+			case "d":
+				ttl = time.Duration(ttlDuration) * time.Hour * 24
+			case "y":
+				ttl = time.Duration(ttlDuration) * time.Hour * 24 * 365
+			}
+
+			if time.Now().UTC().After(env.Status.TTLStartTimestamp.Add(ttl)) {
+				r.Log.Info(fmt.Sprintf("cluster '%s' exceeded TTL of %s (%s - %s)", env.Spec.ClusterName, env.Spec.TTL, env.Status.TTLStartTimestamp, metav1.Now()))
+				r.Log.Info("deleting the cluster")
+				deleteErr := r.Delete(context.Background(), env)
+				if deleteErr != nil && !kerrors.IsNotFound(deleteErr) {
+					r.Log.Error(deleteErr, "could not delete the environment even after exceeding TTL")
+					return ctrl.Result{Requeue: true}, deleteErr
+				}
+
+			}
+
+		}
+
+	}
 
 	k8class, fetchClassErr := r.fetchClusterClass(env)
 	if fetchClassErr != nil {
@@ -151,6 +192,41 @@ func (r *EnvironmentReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error)
 
 func (r *EnvironmentReconciler) updateStatus(env *devv1alpha1.Environment) (ctrl.Result, error) {
 
+	if r.isClusterBound(env) && r.isArgoCDAppReady(env.Spec.Source.Name) && r.areArgoCDAppDependenciesReady(env) {
+		env.Status.Ready = true
+		if err := r.Status().Update(context.Background(), env); err != nil {
+			r.Log.Error(err, "could not update `Status` of env", "object", env)
+			return ctrl.Result{RequeueAfter: time.Second * 10}, err
+		}
+		return ctrl.Result{RequeueAfter: time.Second * 10}, nil
+	}
+
+	env.Status.Ready = false
+	env.Status.TTLStartTimestamp = nil
+	r.Log.Info("status before updating", "env.Status.TTLStartTimestamp", env.Status)
+	if err := r.Status().Update(context.Background(), env); err != nil {
+		r.Log.Error(err, "could not update `Status` of env", "object", env)
+	}
+
+	return ctrl.Result{RequeueAfter: time.Second * 10}, nil
+}
+
+func (r *EnvironmentReconciler) areArgoCDAppDependenciesReady(env *devv1alpha1.Environment) bool {
+	argocdDependenciesReady := true
+	for _, dependency := range env.Spec.Dependencies {
+		if argocdDependenciesReady == false {
+			return argocdDependenciesReady
+		}
+
+		if r.isArgoCDAppReady(dependency.Name) {
+			argocdDependenciesReady = argocdDependenciesReady && true
+		}
+	}
+
+	return argocdDependenciesReady
+}
+
+func (r *EnvironmentReconciler) isEverythingReady(env *devv1alpha1.Environment) bool {
 	argocdDependenciesReady := true
 	for _, dependency := range env.Spec.Dependencies {
 		if argocdDependenciesReady == false {
@@ -163,20 +239,10 @@ func (r *EnvironmentReconciler) updateStatus(env *devv1alpha1.Environment) (ctrl
 	}
 
 	if r.isClusterBound(env) && r.isArgoCDAppReady(env.Spec.Source.Name) && argocdDependenciesReady {
-		env.Status.Ready = true
-		if err := r.Status().Update(context.Background(), env); err != nil {
-			r.Log.Error(err, "could not update `Status` of env", "object", env)
-			return ctrl.Result{RequeueAfter: time.Second * 10}, err
-		}
-		return ctrl.Result{RequeueAfter: time.Second * 10}, nil
+		return true
 	}
 
-	env.Status.Ready = false
-	if err := r.Status().Update(context.Background(), env); err != nil {
-		r.Log.Error(err, "could not update `Status` of env", "object", env)
-	}
-
-	return ctrl.Result{RequeueAfter: time.Second * 10}, nil
+	return false
 }
 
 func (r *EnvironmentReconciler) isClusterBound(env *devv1alpha1.Environment) bool {

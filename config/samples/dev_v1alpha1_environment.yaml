@@ -1,19 +1,90 @@
+# apiVersion: dev.vadasambar.github.io/v1alpha1
+# kind: Environment
+# metadata:
+#   name: new-environment-1d
+# spec:
+#   source:
+#     name: "myapp-1d"
+#     namespace: "default"
+#     path: "guestbook"
+#     repoURL: "https://github.com/argoproj/argocd-example-apps.git"
+#     revision: "HEAD"
+#   dependencies:
+#     - name: "nginx-ingress-1d"
+#       namespace: "default"
+#       chartName: "nginx-ingress"
+#       repoURL: "https://kubernetes-charts.storage.googleapis.com/"
+#       revision: "1.27.0"
+#   clusterClassLabel: app-kubernetes-class
+#   clusterName: new-cluster-1d
+#   ttl: 1d
+    
+
+# --- 
+
+# apiVersion: dev.vadasambar.github.io/v1alpha1
+# kind: Environment
+# metadata:
+#   name: new-environment-1h
+# spec:
+#   source:
+#     name: "myapp-1h"
+#     namespace: "default"
+#     path: "guestbook"
+#     repoURL: "https://github.com/argoproj/argocd-example-apps.git"
+#     revision: "HEAD"
+#   dependencies:
+#     - name: "nginx-ingress-1h"
+#       namespace: "default"
+#       chartName: "nginx-ingress"
+#       repoURL: "https://kubernetes-charts.storage.googleapis.com/"
+#       revision: "1.27.0"
+#   clusterClassLabel: app-kubernetes-class
+#   clusterName: new-cluster-1h
+#   ttl: 1h
+
+# --- 
+
 apiVersion: dev.vadasambar.github.io/v1alpha1
 kind: Environment
 metadata:
-  name: environment-foo
+  name: new-environment-5m
 spec:
   source:
-    name: "myapp"
+    name: "myapp-5m"
     namespace: "default"
     path: "guestbook"
     repoURL: "https://github.com/argoproj/argocd-example-apps.git"
     revision: "HEAD"
   dependencies:
-    - name: "nginx-ingress"
+    - name: "nginx-ingress-5m"
       namespace: "default"
       chartName: "nginx-ingress"
       repoURL: "https://kubernetes-charts.storage.googleapis.com/"
       revision: "1.27.0"
-  clusterClassLabel: app-kubernetes-class
-  clusterName: example-cluster
+  clusterClassLabel: app-kubernetes-env2
+  clusterName: new-cluster-5m6
+  ttl: 5m 
+
+# --- 
+
+# apiVersion: dev.vadasambar.github.io/v1alpha1
+# kind: Environment
+# metadata:
+#   name: new-environment-1m
+# spec:
+#   source:
+#     name: "myapp-1m"
+#     namespace: "default"
+#     path: "guestbook"
+#     repoURL: "https://github.com/argoproj/argocd-example-apps.git"
+#     revision: "HEAD"
+#   dependencies:
+#     - name: "nginx-ingress-1m"
+#       namespace: "default"
+#       chartName: "nginx-ingress"
+#       repoURL: "https://kubernetes-charts.storage.googleapis.com/"
+#       revision: "1.27.0"
+#   clusterClassLabel: app-kubernetes-class
+#   clusterName: new-cluster-1m
+#   ttl: 1m

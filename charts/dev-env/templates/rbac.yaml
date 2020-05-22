@@ -11,7 +11,7 @@ metadata:
   name: dev-env-cr
 rules:
 - apiGroups: ["", "compute.crossplane.io", "argoproj.io", "dev.vadasambar.github.io", "container.gcp.crossplane.io"]
-  resources: ["secrets", "configmaps", "events", "kubernetesclusters", "applications", "environments", "gkeclusterclasses", "nodepools"]
+  resources: ["secrets", "configmaps", "events", "kubernetesclusters", "applications", "environments", "gkeclusterclasses", "nodepools", "environments/status"]
   verbs: ["*"]
 
 ---
@@ -24,7 +24,7 @@ metadata:
 subjects:
 - kind: ServiceAccount
   name: dev-env-sa 
-  namespace: crossplane-system
+  namespace: "{{ .Values.crossplaneNamespace }}"
   apiGroup: ""
 roleRef:
   kind: ClusterRole
