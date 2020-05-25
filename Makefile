@@ -1,6 +1,6 @@
 
 # Image URL to use all building/pushing image targets
-IMG ?= controller:latest
+IMG ?= dev-env:latest
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
 CRD_OPTIONS ?= "crd:trivialVersions=true"
 
@@ -36,14 +36,15 @@ uninstall: manifests
 install-base: 
 	helm repo add crossplane-alpha https://charts.crossplane.io/alpha
 	helm repo update
-	kubectl create ns crossplane-system argocd
+	kubectl create ns crossplane-system
 	helm install crossplane --namespace crossplane-system crossplane-alpha/crossplane --version 0.9.0 \
 	--set clusterStacks.gcp.deploy=true --set clusterStacks.gcp.version=v0.7.0
+	kubectl create ns argocd
 	kubectl apply -f custom-argo-install.yaml -nargocd
 
 uninstall-base:
 	kubectl delete ns argocd crossplane-system
-	helm uninstall crossplane
+	helm uninstall crossplane -ncrossplane-system
 	helm repo remove crossplane-alpha
 	kubectl delete -f custom-argo-install.yaml -nargocd
 

@@ -1,7 +1,6 @@
 replicaCount: 2
 image:
-    # repository: vadasambar/dev-env
-    repository: dev-env
+    repository: vadasambar/dev-env
     pullPolicy: IfNotPresent
 
 crossplaneNamespace: crossplane-system
